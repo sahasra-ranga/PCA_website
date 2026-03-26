@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCA Interactive Guide</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: rgba(255,255,255,.08);
+  --rust: #e05c2a;
+  --teal: #22d3b8;
+  --blue: #3b82f6;
+  --gold: #f59e0b;
+  --muted: rgba(255,255,255,.45);
+  --text: rgba(255,255,255,.88);
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Space Grotesk',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+
+/* ── HEADER ── */
+header {
+  background:rgba(10,14,26,.95);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 2rem;
+  height:60px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky; top:0; z-index:100;
+}
+.logo { font-weight:700; font-size:1.05rem; letter-spacing:-.01em; }
+.logo span { color:var(--rust); }
+.subtitle { font-size:.73rem; color:var(--muted); letter-spacing:.05em; text-transform:uppercase; }
+
+/* ── NAV TABS ── */
+.nav-tabs {
+  display:flex;
+  gap:.25rem;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:.6rem;
+  padding:.3rem;
+}
+.nav-tab {
+  display:flex; align-items:center; gap:.5rem;
+  padding:.5rem 1.1rem;
+  border-radius:.4rem;
+  border:none;
+  background:transparent;
+  color:var(--muted);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:.82rem; font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+  white-space:nowrap;
+}
+.nav-tab .tab-icon { font-size:1rem; }
+.nav-tab:hover { color:var(--text); background:rgba(255,255,255,.06); }
+.nav-tab.active { background:var(--rust); color:#fff; }
+
+/* ── PAGES ── */
+.page { display:none; min-height:calc(100vh - 60px); }
+.page.active { display:block; }
+.page-inner { max-width:1200px; margin:0 auto; padding:2.5rem 2rem; }
+
+/* ── SECTION HEADER ── */
+.section-header { margin-bottom:2rem; }
+.section-label { font-size:.65rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--rust); margin-bottom:.4rem; display:block; }
+.section-title { font-size:1.8rem; font-weight:700; line-height:1.15; }
+.section-sub { font-size:.9rem; color:var(--muted); margin-top:.5rem; max-width:580px; line-height:1.7; }
+
+/* ── CARDS ── */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:.75rem; padding:1.4rem; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
+.three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.2rem; }
+
+/* ── TOOL SELECTOR ── */
+.tool-tabs { display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1.5rem; }
+.tool-btn {
+  padding:.45rem 1.1rem; border-radius:.4rem;
+  border:1px solid var(--border);
+  background:var(--surface2);
+  color:var(--muted); font-size:.82rem; font-weight:600;
+  cursor:pointer; font-family:'Space Grotesk',sans-serif;
+  transition:all .2s;
+}
+.tool-btn:hover { border-color:rgba(255,255,255,.2); color:var(--text); }
+.tool-btn.active { background:rgba(224,92,42,.18); border-color:var(--rust); color:var(--rust); }
+.tool-panel { display:none; }
+.tool-panel.active { display:block; }
+
+/* ── CANVAS ── */
+.canvas-card { background:var(--surface); border:1px solid var(--border); border-radius:.75rem; padding:1.2rem; }
+.canvas-label { font-size:.65rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.8rem; }
+canvas { display:block; border-radius:.5rem; }
+
+/* ── CONTROLS ── */
+.ctrl-row { display:flex; align-items:center; gap:.8rem; margin-top:.8rem; flex-wrap:wrap; }
+.ctrl-label { font-size:.78rem; color:var(--muted); white-space:nowrap; }
+input[type=range] { flex:1; min-width:80px; -webkit-appearance:none; height:4px; background:rgba(255,255,255,.12); border-radius:2px; outline:none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--rust); cursor:pointer; }
+.ctrl-val { font-size:.8rem; font-weight:600; color:var(--rust); min-width:48px; font-family:'JetBrains Mono',monospace; }
+.btn-sm { padding:.38rem .95rem; border-radius:.38rem; border:1px solid var(--border); background:var(--surface2); color:var(--muted); font-size:.76rem; font-weight:600; cursor:pointer; font-family:'Space Grotesk',sans-serif; transition:all .2s; }
+.btn-sm:hover { border-color:rgba(255,255,255,.25); color:var(--text); }
+.btn-sm.hi { background:rgba(34,211,184,.15); border-color:var(--teal); color:var(--teal); }
+.btn-sm.warn { background:rgba(224,92,42,.12); border-color:var(--rust); color:var(--rust); }
+
+/* ── STAT BOX ── */
+.stat-row { background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:.5rem; padding:.65rem .9rem; margin-top:.8rem; }
+.stat-label { font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:.28rem; }
+.var-track { background:rgba(255,255,255,.07); border-radius:3px; height:10px; overflow:hidden; }
+.var-fill { height:100%; border-radius:3px; transition:width .25s, background .25s; }
+.stat-val { font-size:.8rem; font-weight:700; color:var(--rust); margin-top:.28rem; font-family:'JetBrains Mono',monospace; }
+
+/* ── MATH BOX ── */
+.math { background:rgba(17,24,39,.8); border:1px solid rgba(59,130,246,.25); border-radius:.5rem; padding:.8rem 1.1rem; margin:.6rem 0; font-family:'JetBrains Mono',monospace; font-size:.83rem; color:#93c5fd; line-height:1.85; text-align:center; }
+.math .cm { color:rgba(147,197,253,.38); font-family:'Space Grotesk',sans-serif; font-size:.7rem; font-style:italic; display:block; margin-top:.15rem; }
+
+/* ── INFO BOXES ── */
+.info { background:rgba(34,211,184,.08); border:1px solid rgba(34,211,184,.2); border-radius:.55rem; padding:.85rem 1.1rem; margin:.8rem 0; }
+.info p { font-size:.83rem; color:rgba(255,255,255,.8); margin:0; line-height:1.65; }
+.warn-box { background:rgba(224,92,42,.1); border:1px solid rgba(224,92,42,.3); border-radius:.55rem; padding:.85rem 1.1rem; margin:.8rem 0; }
+.warn-box p { font-size:.83rem; color:rgba(255,255,255,.82); margin:0; line-height:1.65; }
+
+/* ── FLIP CARDS ── */
+.flip-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
+.flip-card { height:200px; perspective:900px; cursor:pointer; }
+.flip-inner { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; }
+.flip-card.flipped .flip-inner { transform:rotateY(180deg); }
+.flip-face { position:absolute; inset:0; border-radius:.65rem; padding:1.1rem; backface-visibility:hidden; display:flex; flex-direction:column; justify-content:center; overflow:hidden; }
+.flip-front { background:var(--surface); border:1px solid var(--border); }
+.flip-back { background:var(--surface2); border:1px solid rgba(34,211,184,.2); transform:rotateY(180deg); }
+.fc-icon { font-size:1.6rem; margin-bottom:.4rem; line-height:1; }
+.fc-title { font-size:.85rem; font-weight:700; color:var(--rust); }
+.fc-hint { font-size:.63rem; color:var(--muted); margin-top:.2rem; }
+.fc-cat { font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--teal); margin-bottom:.35rem; }
+.fc-back-text { font-size:.74rem; color:rgba(255,255,255,.78); line-height:1.55; }
+
+/* ── CODE BLOCK ── */
+.code-tabs { display:flex; gap:.35rem; margin-bottom:.6rem; flex-wrap:wrap; }
+.code-tab { padding:.35rem .85rem; border-radius:.35rem; border:1px solid var(--border); background:var(--surface2); color:var(--muted); font-size:.75rem; font-weight:600; cursor:pointer; font-family:'Space Grotesk',sans-serif; transition:all .2s; }
+.code-tab.active { background:rgba(59,130,246,.18); border-color:var(--blue); color:#93c5fd; }
+.code-panel { display:none; }
+.code-panel.active { display:block; }
+pre {
+  background:#0d1117;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:.55rem;
+  padding:1.1rem 1.3rem;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.78rem;
+  color:#e2e8f0;
+  overflow-x:auto;
+  line-height:1.8;
+}
+.kw { color:#f472b6; }
+.fn { color:#60a5fa; }
+.st { color:#4ade80; }
+.cm { color:#6b7280; }
+.nm { color:#fbbf24; }
+.op { color:#f0a080; }
+
+/* ── QUIZ ── */
+.quiz-shell { max-width:680px; margin:0 auto; }
+.quiz-topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:.8rem; }
+.quiz-counter { font-size:.8rem; color:var(--muted); }
+.quiz-score-badge { background:rgba(34,211,184,.12); border:1px solid rgba(34,211,184,.25); border-radius:.4rem; padding:.35rem .75rem; font-size:.8rem; font-weight:700; color:var(--teal); font-family:'JetBrains Mono',monospace; }
+.quiz-dots { display:flex; gap:.3rem; flex-wrap:wrap; margin-bottom:1rem; }
+.quiz-dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.15); transition:background .2s; }
+.quiz-dot.ok { background:#22d3b8; }
+.quiz-dot.bad { background:#e05c2a; }
+.quiz-dot.cur { background:var(--gold); }
+.quiz-card { background:var(--surface); border:1px solid var(--border); border-radius:.8rem; padding:1.8rem; }
+.quiz-category { font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--teal); margin-bottom:.7rem; }
+.quiz-question { font-size:.98rem; font-weight:600; color:var(--text); margin-bottom:1.2rem; line-height:1.55; }
+.quiz-opt { display:block; width:100%; text-align:left; padding:.75rem 1rem; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09); border-radius:.5rem; color:rgba(255,255,255,.78); font-size:.86rem; cursor:pointer; margin-bottom:.45rem; transition:all .2s; font-family:'Space Grotesk',sans-serif; }
+.quiz-opt:hover:not(:disabled) { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.2); }
+.quiz-opt.correct { background:rgba(34,211,184,.18); border-color:var(--teal); color:#6ee7de; }
+.quiz-opt.wrong { background:rgba(224,92,42,.18); border-color:var(--rust); color:#f0a080; }
+.quiz-fb { font-size:.82rem; padding:.6rem .9rem; border-radius:.4rem; margin-top:.6rem; display:none; line-height:1.55; }
+.quiz-fb.show { display:block; }
+.quiz-fb.ok { background:rgba(34,211,184,.12); color:#6ee7de; }
+.quiz-fb.bad { background:rgba(224,92,42,.1); color:#f0a080; }
+.quiz-nav { display:flex; align-items:center; justify-content:space-between; margin-top:1.1rem; gap:.5rem; }
+.result-card { background:var(--surface2); border:1px solid rgba(34,211,184,.25); border-radius:.8rem; padding:2rem; text-align:center; display:none; }
+.result-score { font-size:3rem; font-weight:800; color:var(--teal); font-family:'JetBrains Mono',monospace; }
+.result-msg { font-size:.95rem; color:var(--muted); margin:.5rem 0 1.2rem; }
+
+/* ── LEGEND ── */
+.legend { display:flex; gap:1.2rem; flex-wrap:wrap; margin-top:.7rem; }
+.leg-item { display:flex; align-items:center; gap:.4rem; font-size:.72rem; color:var(--muted); }
+.leg-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+/* ── DP RESULT ── */
+.dp-result-box { background:rgba(17,24,39,.9); border:1px solid rgba(59,130,246,.2); border-radius:.55rem; padding:.9rem 1.1rem; margin:.8rem 0; text-align:center; }
+.dp-result-label { font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:.28rem; }
+.dp-result-val { font-size:1.6rem; font-weight:800; color:var(--rust); font-family:'JetBrains Mono',monospace; }
+.dp-result-interp { font-size:.78rem; color:rgba(255,255,255,.55); margin-top:.28rem; }
+.align-track { background:rgba(255,255,255,.07); border-radius:3px; height:8px; margin-top:.5rem; }
+.align-fill { height:100%; border-radius:3px; transition:width .2s, background .2s; }
+
+/* ── COVARIANCE GRID ── */
+.cov-outer { overflow-x:auto; }
+.cov-grid { display:inline-grid; gap:3px; }
+.cov-cell { border-radius:.2rem; padding:.32rem .15rem; text-align:center; font-size:.67rem; font-family:'JetBrains Mono',monospace; cursor:pointer; transition:transform .12s; }
+.cov-cell:hover { transform:scale(1.1); }
+.cov-tip { background:rgba(17,24,39,.9); border:1px solid var(--border); border-radius:.4rem; padding:.55rem .75rem; font-size:.76rem; min-height:42px; margin-top:.45rem; color:rgba(255,255,255,.7); line-height:1.5; }
+.cov-header-cell { font-size:.6rem; color:var(--muted); text-align:center; padding:.25rem .15rem; }
+
+@media(max-width:720px){
+  .two-col,.three-col,.flip-grid{grid-template-columns:1fr;}
+  header{padding:0 1rem; gap:.5rem;}
+  .nav-tabs{gap:.2rem;}
+  .nav-tab{padding:.45rem .7rem; font-size:.72rem;}
+  .nav-tab .tab-icon{display:none;}
+  .page-inner{padding:1.5rem 1rem;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">PCA <span>Interactive</span></div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('viz')" id="tab-viz">Visualisations</button>
+    <button class="nav-tab" onclick="showPage('apps')" id="tab-apps">Applications</button>
+    <button class="nav-tab" onclick="showPage('code')" id="tab-code">Code</button>
+    <button class="nav-tab" onclick="showPage('quiz')" id="tab-quiz">Quiz</button>
+  </div>
+</header>
+
+<!-- ════════════════════════════════════════ VISUALISATIONS ════════════════════════════════════════ -->
+<div class="page active" id="page-viz">
+  <div class="page-inner">
+    <div class="section-header">
+      <span class="section-label">Interactive Tools</span>
+      <h1 class="section-title">Visualise the Concepts</h1>
+      <p class="section-sub">Three hands-on tools that let you explore PCA's core ideas. Start with the variance explorer to build intuition, then understand the dot product, then see the full covariance picture.</p>
+    </div>
+
+    <div class="tool-tabs">
+      <button class="tool-btn active" onclick="setTool('variance')" id="tbtn-variance">Variance &amp; PC Axes</button>
+      <button class="tool-btn" onclick="setTool('dotprod')" id="tbtn-dotprod">Dot Product</button>
+      <button class="tool-btn" onclick="setTool('covariance')" id="tbtn-covariance">Covariance Matrix</button>
+    </div>
+
+    <!-- ── TOOL 1: VARIANCE ── -->
+    <div class="tool-panel active" id="tool-variance">
+      <div class="two-col">
+        <div>
+          <div class="canvas-card">
+            <div class="canvas-label">Drag the axis — watch variance change</div>
+            <canvas id="vcv" width="480" height="320" style="width:100%;cursor:grab"></canvas>
+            <div class="stat-row">
+              <div class="stat-label">Variance of projected points</div>
+              <div class="var-track"><div class="var-fill" id="vfill" style="width:40%;background:var(--rust)"></div></div>
+              <div class="stat-val" id="vstat">--</div>
+            </div>
+            <div class="ctrl-row" style="margin-top:.6rem">
+
+              <button class="btn-sm" id="va-btn-0" onclick="setVA(0)">Horizontal</button>
+              <button class="btn-sm" id="va-btn-90" onclick="setVA(90)">Vertical</button>
+              <button class="btn-sm" id="va-btn-142" onclick="setVA(142)">PC1 optimal ✓</button>
+              <button class="btn-sm" id="va-btn-52" onclick="setVA(52)">PC2 (⊥ PC1)</button>
+            </div>
+          </div>
+          <div class="canvas-card" style="margin-top:1rem">
+            <div class="canvas-label">1D projection — how spread out are the points?</div>
+            <canvas id="p1d" width="480" height="72" style="width:100%"></canvas>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:1rem">
+            <h3 style="color:var(--rust);margin-bottom:.5rem">What is PCA trying to do?</h3>
+            <p style="font-size:.85rem;line-height:1.7">PCA searches for a direction in the data such that when all points are <strong>projected onto that direction</strong>, they are spread as far apart as possible.</p>
+            <p style="font-size:.85rem;line-height:1.7">This spread is called <strong>variance</strong>. Maximising variance means maximising the amount of information preserved after compression.</p>
+          </div>
+          <div class="card" style="margin-bottom:1rem">
+            <h3 style="color:var(--teal);margin-bottom:.5rem">Try each preset</h3>
+            <div style="display:flex;flex-direction:column;gap:.45rem;margin-top:.3rem">
+              <div style="font-size:.81rem;padding:.4rem .65rem;background:rgba(255,255,255,.04);border-left:3px solid #444;border-radius:0 .35rem .35rem 0">
+                <strong>Horizontal:</strong> the cloud is narrow left-to-right. Points clump on the 1D line.
+              </div>
+              <div style="font-size:.81rem;padding:.4rem .65rem;background:rgba(255,255,255,.04);border-left:3px solid #444;border-radius:0 .35rem .35rem 0">
+                <strong>Vertical:</strong> better, but still not optimal.
+              </div>
+              <div style="font-size:.81rem;padding:.4rem .65rem;background:rgba(34,211,184,.08);border-left:3px solid var(--teal);border-radius:0 .35rem .35rem 0">
+                <strong style="color:var(--teal)">PC1:</strong> variance bar hits maximum. Points are maximally spread. This is the direction PCA finds automatically.
+              </div>
+              <div style="font-size:.81rem;padding:.4rem .65rem;background:rgba(59,130,246,.08);border-left:3px solid var(--blue);border-radius:0 .35rem .35rem 0">
+                <strong style="color:#93c5fd">PC2:</strong> perpendicular to PC1. Captures remaining spread. Independent of PC1.
+              </div>
+            </div>
+          </div>
+          <div class="info">
+            <p>The data cloud is an elongated <strong>ellipse</strong>. PC1 is the long axis of that ellipse, PC2 is the short axis. PCA finds the axes of the data's natural shape — even in 12 dimensions.</p>
+          </div>
+          <div class="card" style="margin-top:1rem">
+            <h3 style="color:var(--rust);margin-bottom:.4rem">Current angle readout</h3>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:1rem;color:var(--gold);margin:.3rem 0" id="vangle">35°</div>
+            <div style="font-size:.78rem;color:var(--muted)">Drag the canvas or use the preset buttons to rotate the projection axis.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TOOL 2: DOT PRODUCT ── -->
+    <div class="tool-panel" id="tool-dotprod">
+      <div class="two-col">
+        <div>
+          <div class="canvas-card">
+            <div class="canvas-label">Vector visualisation — edit components below</div>
+            <canvas id="dpcv" width="480" height="300" style="width:100%"></canvas>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-top:.8rem">
+              <div>
+                <div style="font-size:.7rem;color:#e8a06a;font-weight:600;margin-bottom:.35rem">u — data point (orange)</div>
+                <div style="display:flex;gap:.4rem">
+                  <div style="flex:1"><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">u₁</div><input class="dp-input" id="u1" type="number" value="3" step="0.5" oninput="drawDP()" style="width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:.4rem;padding:.4rem .6rem;color:#fff;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none"></div>
+                  <div style="flex:1"><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">u₂</div><input class="dp-input" id="u2" type="number" value="2" step="0.5" oninput="drawDP()" style="width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:.4rem;padding:.4rem .6rem;color:#fff;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none"></div>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:.7rem;color:#22d3b8;font-weight:600;margin-bottom:.35rem">v — PC direction (teal)</div>
+                <div style="display:flex;gap:.4rem">
+                  <div style="flex:1"><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">v₁</div><input class="dp-input" id="v1" type="number" value="2" step="0.5" oninput="drawDP()" style="width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:.4rem;padding:.4rem .6rem;color:#fff;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none"></div>
+                  <div style="flex:1"><div style="font-size:.65rem;color:var(--muted);margin-bottom:.2rem">v₂</div><input class="dp-input" id="v2" type="number" value="-1" step="0.5" oninput="drawDP()" style="width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:.4rem;padding:.4rem .6rem;color:#fff;font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none"></div>
+                </div>
+              </div>
+            </div>
+            <div class="ctrl-row" style="margin-top:.6rem">
+              <button class="btn-sm" id="dp-btn-0" onclick="setDP(3,2,3,2)">Same dir</button>
+<button class="btn-sm" id="dp-btn-1" onclick="setDP(3,0,0,3)">Perpendicular</button>
+<button class="btn-sm" id="dp-btn-2" onclick="setDP(3,2,-3,-2)">Opposite</button>
+<button class="btn-sm" id="dp-btn-3" onclick="setDP(0.46,-0.43,3,2)">Wine PC1</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="dp-result-box">
+            <div class="dp-result-label">u · v = u₁×v₁ + u₂×v₂</div>
+            <div class="dp-result-val" id="dpv">--</div>
+            <div class="dp-result-interp" id="dpi">--</div>
+            <div class="align-track"><div class="align-fill" id="dpaf" style="width:50%;background:var(--rust)"></div></div>
+          </div>
+          <div class="card" style="margin-bottom:1rem">
+            <h3 style="color:var(--rust);margin-bottom:.5rem">What is a dot product?</h3>
+            <div class="math">u · v = |u| |v| cos θ<span class="cm">θ = angle between the vectors</span></div>
+            <p style="font-size:.84rem;line-height:1.7">Geometrically, the dot product is the <strong>length of the shadow u casts onto v</strong>, scaled by |v|. When the vectors point the same way, the shadow is longest. When perpendicular, the shadow vanishes — dot product is zero.</p>
+          </div>
+          <div class="card" style="margin-bottom:1rem">
+            <h3 style="color:var(--teal);margin-bottom:.5rem">Why PCA needs it</h3>
+            <p style="font-size:.84rem;line-height:1.7">In PCA, <strong>v</strong> is the candidate PC direction (unit vector) and <strong>x</strong> is a wine's measurements. The dot product <code style="font-family:'JetBrains Mono',monospace;font-size:.82rem;color:#93c5fd">vᵀx</code> gives one number: <em>where does this wine land along axis v?</em></p>
+            <div class="math" style="font-size:.8rem">PC score of wine x = vᵀx<span class="cm">computed using the dot product for every wine</span></div>
+            <p style="font-size:.84rem;line-height:1.7">PCA finds the v that makes those scores most spread out — i.e. maximises their variance.</p>
+          </div>
+          <div class="info">
+            <p>Try <strong>Wine PC1</strong>: v = [0.46, −0.43] is a simplified PC1 direction. u = [3, 2] are wine measurements. The dot product is that wine's "body and richness" score.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TOOL 3: COVARIANCE ── -->
+    <div class="tool-panel" id="tool-covariance">
+      <div class="two-col">
+        <div>
+          <div class="canvas-card">
+            <div class="canvas-label">Wine covariance matrix — click any cell</div>
+            <div class="cov-outer"><div id="covGrid" class="cov-grid"></div></div>
+            <div id="covTip" class="cov-tip">Click any cell to see what that covariance means for the wine data.</div>
+          </div>
+          <div class="card" style="margin-top:1rem">
+            <h3 style="margin-bottom:.5rem">Colour key</h3>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:.4rem;font-size:.78rem"><div style="width:12px;height:12px;border-radius:.2rem;background:rgba(28,53,83,.9)"></div>Strong positive</div>
+              <div style="display:flex;align-items:center;gap:.4rem;font-size:.78rem"><div style="width:12px;height:12px;border-radius:.2rem;background:rgba(179,74,30,.9)"></div>Strong negative</div>
+              <div style="display:flex;align-items:center;gap:.4rem;font-size:.78rem"><div style="width:12px;height:12px;border-radius:.2rem;background:#222"></div>Near zero</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:1rem">
+            <h3 style="color:var(--rust);margin-bottom:.5rem">What is the covariance matrix?</h3>
+            <div class="math">C = (1/N) Σ (xᵢ−m)(xᵢ−m)ᵀ<span class="cm">A symmetric n×n matrix capturing how every pair of variables moves together</span></div>
+            <p style="font-size:.84rem;line-height:1.7">C[i,j] measures whether variables i and j tend to rise together (positive) or move opposite (negative). The diagonal holds each variable's own variance.</p>
+          </div>
+          <div class="card" style="margin-bottom:1rem">
+            <h3 style="color:var(--teal);margin-bottom:.5rem">Why it matters</h3>
+            <p style="font-size:.84rem;line-height:1.7">C encodes the <strong>entire shape and orientation</strong> of the data cloud. The cloud's elongation axis is the eigenvector of C with the largest eigenvalue — and that is PC1.</p>
+            <p style="font-size:.84rem;line-height:1.7">PCA boils down to: build C, find its eigenvectors, sort by eigenvalue. That is all.</p>
+          </div>
+          <div class="info">
+            <p>Notice the strong <strong>negative</strong> correlation between alcohol and density — as fermentation converts sugar to alcohol, wine density drops. And between fixed acidity and pH — more acid always means lower pH (definitional).</p>
+          </div>
+          <div class="math" style="margin-top:.8rem">Cv = λv &nbsp;→&nbsp; C = VΛVᵀ<span class="cm">Eigendecomposition gives us the PC axes (V) and their importances (Λ)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ APPLICATIONS ════════════════════════════════════════ -->
+<div class="page" id="page-apps">
+  <div class="page-inner">
+    <div class="section-header">
+      <span class="section-label">Real World</span>
+      <h1 class="section-title">Where PCA is Used</h1>
+      <p class="section-sub">PCA is one of the most widely deployed techniques in data science. Click any card to see how it is applied in that field.</p>
+    </div>
+    <div class="flip-grid" id="appGrid"></div>
+    <div class="info" style="margin-top:1.5rem">
+      <p>PCA was invented by Karl Pearson in 1901 and independently developed by Harold Hotelling in 1933. It remains one of the most widely used techniques in data science over a century later — a testament to how fundamental the idea of finding directions of maximum variance really is.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ CODE ════════════════════════════════════════ -->
+<div class="page" id="page-code">
+  <div class="page-inner">
+    <div class="section-header">
+      <span class="section-label">Python Implementation</span>
+      <h1 class="section-title">PCA in Code</h1>
+      <p class="section-sub">A complete walkthrough using scikit-learn on the red wine dataset. Click each tab to step through the implementation.</p>
+    </div>
+    <div class="two-col" style="align-items:start">
+      <div>
+        <div class="code-tabs" id="codeTabs"></div>
+        <div id="codePanels"></div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:1rem">
+          <h3 style="color:var(--rust);margin-bottom:.6rem">Key scikit-learn attributes</h3>
+          <div style="display:flex;flex-direction:column;gap:.4rem">
+            <div style="background:rgba(255,255,255,.04);border-radius:.35rem;padding:.5rem .7rem">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:.77rem;color:var(--gold)">pca.explained_variance_ratio_</div>
+              <div style="font-size:.74rem;color:var(--muted);margin-top:.18rem">Array of % variance explained per PC. Sums to 1.0</div>
+            </div>
+            <div style="background:rgba(255,255,255,.04);border-radius:.35rem;padding:.5rem .7rem">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:.77rem;color:var(--gold)">pca.components_</div>
+              <div style="font-size:.74rem;color:var(--muted);margin-top:.18rem">Eigenvectors (loadings). Shape: (n_components, n_features)</div>
+            </div>
+            <div style="background:rgba(255,255,255,.04);border-radius:.35rem;padding:.5rem .7rem">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:.77rem;color:var(--gold)">pca.explained_variance_</div>
+              <div style="font-size:.74rem;color:var(--muted);margin-top:.18rem">Actual eigenvalues (variance in each PC direction)</div>
+            </div>
+            <div style="background:rgba(255,255,255,.04);border-radius:.35rem;padding:.5rem .7rem">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:.77rem;color:var(--gold)">pca.fit_transform(X)</div>
+              <div style="font-size:.74rem;color:var(--muted);margin-top:.18rem">Fit PCA and return X projected onto PC axes</div>
+            </div>
+            <div style="background:rgba(255,255,255,.04);border-radius:.35rem;padding:.5rem .7rem">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:.77rem;color:var(--gold)">pca.inverse_transform(X_pca)</div>
+              <div style="font-size:.74rem;color:var(--muted);margin-top:.18rem">Reconstruct approximate original data from PC scores</div>
+            </div>
+          </div>
+        </div>
+        <div class="warn-box">
+          <p><strong style="color:var(--rust)">Always standardise first.</strong> Use StandardScaler before PCA. Without it, variables with larger numerical scales (e.g. total SO₂ in mg/L) dominate the covariance matrix purely due to scale, not because they are more informative.</p>
+        </div>
+        <div class="card" style="margin-top:1rem">
+          <h3 style="margin-bottom:.5rem">Choosing n_components</h3>
+          <div style="display:flex;flex-direction:column;gap:.4rem;margin-top:.3rem">
+            <div style="font-size:.8rem;padding:.4rem .65rem;background:rgba(224,92,42,.1);border-left:3px solid var(--rust);border-radius:0 .35rem .35rem 0">Retain enough PCs to explain <strong>70–90%</strong> of total variance</div>
+            <div style="font-size:.8rem;padding:.4rem .65rem;background:rgba(34,211,184,.08);border-left:3px solid var(--teal);border-radius:0 .35rem .35rem 0">Look for the <strong>elbow</strong> in the scree plot</div>
+            <div style="font-size:.8rem;padding:.4rem .65rem;background:rgba(59,130,246,.08);border-left:3px solid var(--blue);border-radius:0 .35rem .35rem 0">For visualisation use exactly <strong>2 or 3</strong> components</div>
+            <div style="font-size:.8rem;padding:.4rem .65rem;background:rgba(255,255,255,.04);border-left:3px solid rgba(255,255,255,.15);border-radius:0 .35rem .35rem 0">Use <code style="font-family:'JetBrains Mono',monospace;color:var(--gold)">PCA(n_components=0.90)</code> to auto-select</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ QUIZ ════════════════════════════════════════ -->
+<div class="page" id="page-quiz">
+  <div class="page-inner">
+    <div class="section-header">
+      <span class="section-label">30 Question Bank</span>
+      <h1 class="section-title">Test Your Knowledge</h1>
+      <p class="section-sub">10 randomly selected questions from a bank of 30, covering all aspects of PCA.</p>
+    </div>
+    <div class="quiz-shell">
+      <div id="quizMain">
+        <div class="quiz-topbar">
+          <div class="quiz-counter" id="qCounter">Question 1 of 10</div>
+          <div style="display:flex;gap:.6rem;align-items:center">
+            <div class="quiz-score-badge" id="qScoreBadge">0 / 0</div>
+            <button class="btn-sm warn" onclick="startQuiz()">Restart</button>
+          </div>
+        </div>
+        <div class="quiz-dots" id="qDots"></div>
+        <div class="quiz-card">
+          <div class="quiz-category" id="qCat">--</div>
+          <div class="quiz-question" id="qQuestion">--</div>
+          <div id="qOptions"></div>
+          <div class="quiz-fb" id="qFb"></div>
+        </div>
+        <div class="quiz-nav">
+          <button class="btn-sm" id="qPrev" onclick="qNav(-1)" disabled>← Prev</button>
+          <span style="font-size:.78rem;color:var(--muted)" id="qNavHint">Answer to advance</span>
+          <button class="btn-sm" id="qNext" onclick="qNav(1)" disabled>Next →</button>
+        </div>
+      </div>
+      <div class="result-card" id="quizResult">
+        <div class="result-score" id="rScore">0/10</div>
+        <div class="result-msg" id="rMsg">--</div>
+        <button class="btn-sm hi" onclick="startQuiz()" style="font-size:.88rem;padding:.6rem 1.5rem">Try again with new questions</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── PAGE SWITCHING ───────────────────────────────────────────────
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='viz'){setTimeout(()=>{drawVariance();drawDP();},50);}
+}
+function setTool(id){
+  document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tool-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tbtn-'+id).classList.add('active');
+  document.getElementById('tool-'+id).classList.add('active');
+  setTimeout(()=>{if(id==='variance')drawVariance();if(id==='dotprod')drawDP();},30);
+}
+
+// ─── SHARED DATA ─────────────────────────────────────────────────
+const rng=(s=>()=>{s=(s*1664525+1013904223)&0xffffffff;return(s>>>0)/0xffffffff;})(42);
+function genPts(n){
+  const a=[];
+  for(let i=0;i<n;i++){
+    const t=(rng()-.5)*4,p=(rng()-.5)*1.3,A=-38*Math.PI/180;
+    a.push({x:t*Math.cos(A)-p*Math.sin(A),y:t*Math.sin(A)+p*Math.cos(A),g:t>1.2?'bold':t<-1.2?'light':'med'});
+  }
+  return a;
+}
+const PTS=genPts(48);
+const PC={bold:'#e8a06a',light:'#4db8a8',med:'#88b4d8'};
+function toSc(x,y,W,H,s){return[W/2+x*s,H/2-y*s];}
+
+// ─── VARIANCE CANVAS ─────────────────────────────────────────────
+const vcv=document.getElementById('vcv');
+const vctx=vcv.getContext('2d');
+const p1d=document.getElementById('p1d');
+const p1ctx=p1d.getContext('2d');
+let vAngle=35,vDrag=false;
+const PC1A=142;
+
+function setVA(a){
+  vAngle = a;
+  document.querySelectorAll('[id^="va-btn-"]').forEach(b => b.classList.remove('hi'));
+  const active = document.getElementById('va-btn-' + a);
+  if(active) active.classList.add('hi');
+  drawVariance();
+}
+
+vcv.addEventListener('mousedown',()=>vDrag=true);
+vcv.addEventListener('mouseup',()=>vDrag=false);
+vcv.addEventListener('mouseleave',()=>vDrag=false);
+vcv.addEventListener('mousemove',e=>{
+  if(!vDrag)return;
+  const r=vcv.getBoundingClientRect();
+  const mx=(e.clientX-r.left)*(vcv.width/r.width)-vcv.width/2;
+  const my=(e.clientY-r.top)*(vcv.height/r.height)-vcv.height/2;
+  vAngle=((Math.atan2(-my,mx)*180/Math.PI)%180+180)%180;
+  drawVariance();
+});
+vcv.addEventListener('touchstart',e=>{vDrag=true;e.preventDefault();},{passive:false});
+vcv.addEventListener('touchend',()=>vDrag=false);
+vcv.addEventListener('touchmove',e=>{
+  if(!vDrag)return;e.preventDefault();
+  const r=vcv.getBoundingClientRect(),t=e.touches[0];
+  const mx=(t.clientX-r.left)*(vcv.width/r.width)-vcv.width/2;
+  const my=(t.clientY-r.top)*(vcv.height/r.height)-vcv.height/2;
+  vAngle=((Math.atan2(-my,mx)*180/Math.PI)%180+180)%180;
+  drawVariance();
+},{passive:false});
+
+function drawVariance(){
+  const W=vcv.width,H=vcv.height,s=50;
+  const cx=W/2,cy=H/2;
+  const rad=vAngle*Math.PI/180;
+
+  // PC1 is at ~142°, PC2 is perpendicular (~52°)
+  const isPC1=Math.abs(vAngle-PC1A)<6;
+  const isPC2=Math.abs(vAngle-52)<6;
+  // colour: teal only when genuinely at PC1, neutral otherwise
+  const axC=isPC1?'#22d3b8':'rgba(255,255,255,.6)';
+
+  vctx.clearRect(0,0,W,H);
+  // subtle grid
+  vctx.strokeStyle='rgba(255,255,255,.04)';vctx.lineWidth=1;
+  for(let x=0;x<W;x+=50){vctx.beginPath();vctx.moveTo(x,0);vctx.lineTo(x,H);vctx.stroke();}
+  for(let y=0;y<H;y+=50){vctx.beginPath();vctx.moveTo(0,y);vctx.lineTo(W,y);vctx.stroke();}
+  // axes
+  vctx.strokeStyle='rgba(255,255,255,.1)';vctx.lineWidth=1;
+  vctx.beginPath();vctx.moveTo(24,cy);vctx.lineTo(W-24,cy);vctx.stroke();
+  vctx.beginPath();vctx.moveTo(cx,18);vctx.lineTo(cx,H-18);vctx.stroke();
+
+  // projection axis — just a plain line, no arrowheads
+  const L=195,ax=Math.cos(rad)*L,ay=Math.sin(rad)*L;
+  vctx.strokeStyle=axC;vctx.lineWidth=2.5;
+  vctx.beginPath();vctx.moveTo(cx-ax,cy+ay);vctx.lineTo(cx+ax,cy-ay);vctx.stroke();
+
+  // label at tip
+  vctx.font='bold 11px JetBrains Mono,monospace';vctx.fillStyle=axC;
+  const label=isPC1?'PC1':isPC2?'PC2':Math.round(vAngle)+'°';
+  vctx.fillText(label,cx+ax+5,cy-ay+4);
+
+  document.getElementById('vangle').textContent=Math.round(vAngle)+'°';
+
+  // data points + projections
+  const projs=[];
+  PTS.forEach(p=>{
+    const[sx,sy]=toSc(p.x,p.y,W,H,s);
+    const proj=p.x*Math.cos(rad)-p.y*Math.sin(rad);
+    projs.push(proj);
+    const fx=cx+proj*Math.cos(rad)*s,fy=cy-proj*(-Math.sin(rad))*s;
+    vctx.strokeStyle='rgba(255,255,255,.07)';vctx.lineWidth=.8;vctx.setLineDash([3,3]);
+    vctx.beginPath();vctx.moveTo(sx,sy);vctx.lineTo(fx,fy);vctx.stroke();
+    vctx.setLineDash([]);
+    vctx.beginPath();vctx.arc(fx,fy,3,0,Math.PI*2);vctx.fillStyle=axC+'55';vctx.fill();
+    vctx.beginPath();vctx.arc(sx,sy,5.5,0,Math.PI*2);vctx.fillStyle=PC[p.g]+'cc';vctx.fill();
+  });
+
+  // variance
+  const mn=projs.reduce((a,b)=>a+b,0)/projs.length;
+  const variance=projs.reduce((s2,v)=>s2+(v-mn)**2,0)/projs.length;
+  const pct=Math.min(100,(variance/2.8)*100);
+  document.getElementById('vfill').style.width=pct+'%';
+  document.getElementById('vfill').style.background=isPC1?'#22d3b8':pct>50?'#e8a06a':'#555';
+  document.getElementById('vstat').textContent='Variance = '+variance.toFixed(3)+(isPC1?' — maximum! (PC1)':isPC2?' — PC2 direction':'');
+
+  // 1D canvas
+  p1ctx.clearRect(0,0,p1d.width,p1d.height);
+  const PW=p1d.width,PH=p1d.height,lY=PH/2;
+  p1ctx.strokeStyle=axC;p1ctx.lineWidth=2;
+  p1ctx.beginPath();p1ctx.moveTo(16,lY);p1ctx.lineTo(PW-16,lY);p1ctx.stroke();
+  const pMin=Math.min(...projs),pMax=Math.max(...projs),pR=Math.max(pMax-pMin,.01);
+  PTS.forEach((p,i)=>{
+    const px=16+((projs[i]-pMin)/pR)*(PW-32);
+    p1ctx.beginPath();p1ctx.arc(px,lY,5,0,Math.PI*2);p1ctx.fillStyle=PC[p.g]+'cc';p1ctx.fill();
+  });
+}
+drawVariance();
+
+// ─── DOT PRODUCT ─────────────────────────────────────────────────
+const dpCv=document.getElementById('dpcv');
+const dpCtx=dpCv.getContext('2d');
+
+function setDP(u1v,u2v,v1v,v2v){
+  document.getElementById('u1').value=u1v;document.getElementById('u2').value=u2v;
+  document.getElementById('v1').value=v1v;document.getElementById('v2').value=v2v;
+  document.querySelectorAll('[id^="dp-btn-"]').forEach(b=>b.classList.remove('hi'));
+  const map={
+    '3,2,3,2':'dp-btn-0',
+    '3,0,0,3':'dp-btn-1',
+    '3,2,-3,-2':'dp-btn-2',
+    '0.46,-0.43,3,2':'dp-btn-3'
+  };
+  const key=`${u1v},${u2v},${v1v},${v2v}`;
+  if(map[key]) document.getElementById(map[key]).classList.add('hi');
+  drawDP();
+}
+
+function drawDP(){
+  const W=dpCv.width,H=dpCv.height,s=38;
+  const cx=W/2,cy=H/2;
+  dpCtx.clearRect(0,0,W,H);
+  dpCtx.strokeStyle='rgba(255,255,255,.05)';dpCtx.lineWidth=1;
+  for(let x=0;x<W;x+=s){dpCtx.beginPath();dpCtx.moveTo(x,0);dpCtx.lineTo(x,H);dpCtx.stroke();}
+  for(let y=0;y<H;y+=s){dpCtx.beginPath();dpCtx.moveTo(0,y);dpCtx.lineTo(W,y);dpCtx.stroke();}
+  dpCtx.strokeStyle='rgba(255,255,255,.12)';dpCtx.lineWidth=1;
+  dpCtx.beginPath();dpCtx.moveTo(24,cy);dpCtx.lineTo(W-24,cy);dpCtx.stroke();
+  dpCtx.beginPath();dpCtx.moveTo(cx,18);dpCtx.lineTo(cx,H-18);dpCtx.stroke();
+
+  const u1=parseFloat(document.getElementById('u1').value)||0;
+  const u2=parseFloat(document.getElementById('u2').value)||0;
+  const v1=parseFloat(document.getElementById('v1').value)||0;
+  const v2=parseFloat(document.getElementById('v2').value)||0;
+
+  const magV=Math.sqrt(v1**2+v2**2)||1;
+  const vn=[v1/magV,v2/magV];
+  const dot=u1*v1+u2*v2;
+  const projLen=dot/magV;
+  const footX=cx+projLen*vn[0]*s,footY=cy-projLen*vn[1]*s;
+
+  // extended projection axis — dashed line
+  const axLen=165;
+  dpCtx.strokeStyle='rgba(34,211,184,.35)';dpCtx.lineWidth=1.5;dpCtx.setLineDash([6,4]);
+  dpCtx.beginPath();dpCtx.moveTo(cx-vn[0]*axLen,cy+vn[1]*axLen);dpCtx.lineTo(cx+vn[0]*axLen,cy-vn[1]*axLen);dpCtx.stroke();
+  dpCtx.setLineDash([]);
+
+  // perpendicular drop from u tip to its foot on v axis
+  const uX=cx+u1*s,uY=cy-u2*s;
+  dpCtx.strokeStyle='rgba(255,255,255,.18)';dpCtx.lineWidth=1;dpCtx.setLineDash([4,4]);
+  dpCtx.beginPath();dpCtx.moveTo(uX,uY);dpCtx.lineTo(footX,footY);dpCtx.stroke();
+  dpCtx.setLineDash([]);
+
+  // shadow segment (projection length on v) — thick coloured line
+  dpCtx.strokeStyle='#e8a06a';dpCtx.lineWidth=4;
+  dpCtx.beginPath();dpCtx.moveTo(cx,cy);dpCtx.lineTo(footX,footY);dpCtx.stroke();
+  // dot at foot
+  dpCtx.beginPath();dpCtx.arc(footX,footY,5,0,Math.PI*2);dpCtx.fillStyle='#e8a06a';dpCtx.fill();
+
+  // vectors — just clean lines with a small endpoint circle
+  function drawVec(x,y,col,lbl){
+    const tx=cx+x*s,ty=cy-y*s;
+    dpCtx.strokeStyle=col;dpCtx.lineWidth=2.5;
+    dpCtx.beginPath();dpCtx.moveTo(cx,cy);dpCtx.lineTo(tx,ty);dpCtx.stroke();
+    // small filled circle at tip
+    dpCtx.beginPath();dpCtx.arc(tx,ty,4,0,Math.PI*2);dpCtx.fillStyle=col;dpCtx.fill();
+    dpCtx.font='bold 12px JetBrains Mono,monospace';dpCtx.fillStyle=col;
+    dpCtx.fillText(lbl,tx+7,ty-5);
+  }
+  drawVec(u1,u2,'#e8a06a','u');
+  drawVec(v1,v2,'#22d3b8','v');
+
+  // angle arc between u and v
+  if(Math.sqrt(u1**2+u2**2)>0.1&&Math.sqrt(v1**2+v2**2)>0.1){
+    const au=Math.atan2(-u2,u1),av=Math.atan2(-v2,v1);
+    dpCtx.strokeStyle='rgba(255,255,255,.25)';dpCtx.lineWidth=1;
+    dpCtx.beginPath();dpCtx.arc(cx,cy,28,au,av,false);dpCtx.stroke();
+    dpCtx.beginPath();dpCtx.arc(cx,cy,28,au,av,true);dpCtx.stroke();
+  }
+
+  const magU=Math.sqrt(u1**2+u2**2)||1;
+  const cosA=Math.max(-1,Math.min(1,dot/(magU*magV)));
+  const angDeg=(Math.acos(cosA)*180/Math.PI).toFixed(1);
+  dpCtx.fillStyle='rgba(255,255,255,.38)';dpCtx.font='10px Space Grotesk,sans-serif';
+  dpCtx.fillText(angDeg+'°',cx+33,cy-5);
+  dpCtx.fillStyle='rgba(255,255,255,.28)';dpCtx.font='10px Space Grotesk,sans-serif';
+  dpCtx.fillText('orange shadow = dot product',cx-148,H-14);
+
+  document.getElementById('dpv').textContent=dot.toFixed(3);
+  const interp=Math.abs(dot)<0.05?'Zero — vectors are perpendicular':dot>0?'Positive — similar direction':'Negative — opposite directions';
+  document.getElementById('dpi').textContent=interp+' | angle = '+angDeg+'°';
+  const fillPct=Math.min(100,Math.abs(cosA)*100);
+  document.getElementById('dpaf').style.width=fillPct+'%';
+  document.getElementById('dpaf').style.background=dot>0?'#22d3b8':dot<0?'#e05c2a':'#555';
+}
+drawDP();
+
+// ─── COVARIANCE MATRIX ───────────────────────────────────────────
+const CVARS=['alcohol','density','fix.acid','pH','sulphates','chlorides'];
+const CDATA=[
+  [ .65,-.50,-.06, .21, .25,-.12],
+  [-.50, .48, .08,-.10,-.09, .06],
+  [-.06, .08, .58,-.68, .17, .14],
+  [ .21,-.10,-.68, .31,-.20,-.08],
+  [ .25,-.09, .17,-.20, .32, .05],
+  [-.12, .06, .14,-.08, .05, .18]
+];
+const CDESC=[
+  [
+    "Variance of alcohol itself. On the diagonal of C — always a positive number representing how much alcohol content varies across the 1,599 wines.",
+    "Alcohol vs density (−0.50): strongly anti-correlated. As fermentation converts sugar into alcohol, the wine loses mass per unit volume, so density drops. More alcohol reliably means lower density.",
+    "Alcohol vs fixed acidity (−0.06): near-zero correlation. The two variables vary largely independently — knowing a wine's alcohol content tells you almost nothing about its fixed acidity.",
+    "Alcohol vs pH (+0.21): mild positive correlation. Higher-alcohol wines tend to be slightly more alkaline. Fermentation consumes acidic compounds, raising pH as alcohol climbs.",
+    "Alcohol vs sulphates (+0.25): moderate positive. Wines with higher alcohol content tend to have more sulphates added — both are associated with bolder, fuller-bodied wines.",
+    "Alcohol vs chlorides (−0.12): mild negative. Saltier wines tend to have slightly lower alcohol, possibly because heavy mineral content comes from different terroirs than high-sugar grapes."
+  ],
+  [
+    "Density vs alcohol (−0.50): strongly anti-correlated. As alcohol rises, density falls — this mirrors the alcohol vs density entry because the covariance matrix is symmetric (C[i,j] = C[j,i]).",
+    "Variance of density itself. Relatively small number — winemakers tightly control density during fermentation, so it does not vary as widely as, say, acidity.",
+    "Density vs fixed acidity (+0.08): small positive. Wines with more dissolved fixed acids are fractionally denser because dissolved ionic species add mass per unit volume.",
+    "Density vs pH (−0.10): small negative. Denser wines tend to contain more dissolved acids, which lowers pH. The relationship is mild because many other factors also affect pH.",
+    "Density vs sulphates (−0.09): small negative. Higher-sulphate wines tend to be slightly less dense — both this and the alcohol-density link contribute to the 'body' axis in PCA.",
+    "Density vs chlorides (+0.06): small positive. Chloride ions are dissolved solids that marginally increase liquid density, giving a small positive relationship."
+  ],
+  [
+    "Fixed acidity vs alcohol (−0.06): near-zero correlation. Fixed acidity and alcohol are essentially independent — the same near-zero value as the alcohol vs fixed acidity entry above.",
+    "Fixed acidity vs density (+0.08): small positive. More dissolved fixed acids increase the density of the solution slightly, matching the density vs fixed acidity entry.",
+    "Variance of fixed acidity. On the diagonal — represents how much tartaric, malic, and other fixed acids vary across wines. This is one of the larger diagonal entries.",
+    "Fixed acidity vs pH (−0.68): strongly negative. This is a near-definitional relationship: pH is a logarithmic inverse measure of acidity. More fixed acid always produces a lower pH value. The strongest off-diagonal relationship in this matrix.",
+    "Fixed acidity vs sulphates (+0.17): moderate positive. Wines with higher acidity levels tend to need more sulphate stabilisation, and both are associated with structured, age-worthy wines.",
+    "Fixed acidity vs chlorides (+0.14): moderate positive. Both fixed acids and chlorides are dissolved ionic species. Wines with more mineral character tend to be higher in both."
+  ],
+  [
+    "pH vs alcohol (+0.21): mild positive correlation. As alcohol rises, pH tends to rise (less acidic). Fermentation consumes sugars and some acidic compounds, gently increasing pH — mirrors the alcohol vs pH entry.",
+    "pH vs density (−0.10): small negative. More acidic wines (lower pH) tend to be slightly denser due to more dissolved acid content — mirrors the density vs pH entry.",
+    "pH vs fixed acidity (−0.68): strongly negative. More fixed acid means lower pH — a definitional chemical relationship. The same strong value as fixed acidity vs pH, because the matrix is symmetric.",
+    "Variance of pH. Relatively modest — wine pH is buffered by the acid-base chemistry of tartrate and other organic acids, so it does not swing wildly across wines.",
+    "pH vs sulphates (−0.20): moderate negative. Wines with more sulphates tend to be slightly more acidic (lower pH). Sulphates can react with wine compounds to mildly decrease pH.",
+    "pH vs chlorides (−0.08): small negative. Slightly more acidic wines tend to have marginally higher chloride content — a weak relationship."
+  ],
+  [
+    "Sulphates vs alcohol (+0.25): moderate positive. Both variables are associated with fuller-bodied, more structured red wines — mirrors the alcohol vs sulphates entry.",
+    "Sulphates vs density (−0.09): small negative. Higher-sulphate wines tend to be slightly less dense, linking into the body-and-richness axis — mirrors the density vs sulphates entry.",
+    "Sulphates vs fixed acidity (+0.17): moderate positive. Structured wines with more acidity also tend to use more sulphate as a preservative — mirrors the fixed acidity vs sulphates entry.",
+    "Sulphates vs pH (−0.20): moderate negative. Wines with more sulphates tend to be more acidic (lower pH) — mirrors the pH vs sulphates entry.",
+    "Variance of sulphates itself. Moderate variance — winemakers adjust sulphate additions deliberately, producing genuine spread across the dataset.",
+    "Sulphates vs chlorides (+0.05): near-zero. Sulphate and chloride levels vary largely independently — both are mineral additions from different sources with little shared driver."
+  ],
+  [
+    "Chlorides vs alcohol (−0.12): mild negative. Saltier wines tend to have slightly lower alcohol — mirrors the alcohol vs chlorides entry.",
+    "Chlorides vs density (+0.06): small positive. Both dissolved solids contribute to density — mirrors the density vs chlorides entry.",
+    "Chlorides vs fixed acidity (+0.14): moderate positive. Wines with more mineral character (chlorides) tend to also have more fixed acidity — mirrors the fixed acidity vs chlorides entry.",
+    "Chlorides vs pH (−0.08): small negative. Slightly saltier wines tend to be fractionally more acidic — mirrors the pH vs chlorides entry.",
+    "Chlorides vs sulphates (+0.05): near-zero. The two mineral additives vary largely independently — mirrors the sulphates vs chlorides entry.",
+    "Variance of chlorides. Small — chloride levels are tightly regulated in winemaking and do not vary much across the dataset."
+  ]
+];
+
+function buildCov(){
+  const g=document.getElementById('covGrid');
+  g.innerHTML='';
+  const cols=CVARS.length+1;
+  g.style.gridTemplateColumns=`auto repeat(${CVARS.length},1fr)`;
+  // corner
+  g.appendChild(Object.assign(document.createElement('div'),{style:'padding:.2rem;font-size:.58rem;color:rgba(255,255,255,.2);'}));
+  CVARS.forEach(v=>{
+    const d=document.createElement('div');
+    d.className='cov-header-cell';d.textContent=v;g.appendChild(d);
+  });
+  CDATA.forEach((row,i)=>{
+    const lbl=document.createElement('div');
+    lbl.style.cssText='font-size:.6rem;color:rgba(255,255,255,.38);display:flex;align-items:center;padding:.2rem .4rem;white-space:nowrap;';
+    lbl.textContent=CVARS[i];g.appendChild(lbl);
+    row.forEach((val,j)=>{
+      const cell=document.createElement('div');
+      cell.className='cov-cell';
+      const ab=Math.abs(val);
+      const r=val>0?28:179,gv=val>0?83:74,b=val>0?53:30;
+      const alpha=i===j?.88:Math.min(.85,ab*1.6);
+      cell.style.background=`rgba(${r},${gv},${b},${alpha})`;
+      cell.style.color=ab>.28?'#fff':'rgba(255,255,255,.5)';
+      if(i===j)cell.style.border='1px solid rgba(255,255,255,.2)';
+      cell.textContent=val.toFixed(2);
+      cell.addEventListener('click',()=>{
+        document.getElementById('covTip').innerHTML=`<strong style="color:#e05c2a">${CVARS[i]} vs ${CVARS[j]}</strong> (${val>=0?'+':''}${val.toFixed(2)}): ${CDESC[i][j]}`;
+      });
+      cell.addEventListener('mouseenter',()=>cell.style.transform='scale(1.12)');
+      cell.addEventListener('mouseleave',()=>cell.style.transform='scale(1)');
+      g.appendChild(cell);
+    });
+  });
+}
+buildCov();
+
+// ─── APPLICATIONS ─────────────────────────────────────────────────
+const APPS=[
+  {icon:'📊',title:'Data Visualisation',cat:'General',back:'Reduces high-dimensional data to 2D or 3D scatter plots. Clusters, outliers and structure become visible instantly without information overload.'},
+  {icon:'🤖',title:'ML Preprocessing',cat:'Machine Learning',back:'Removes correlated features and noise before training. Reduces overfitting and speeds up learning algorithms by removing redundant dimensions.'},
+  {icon:'🖼️',title:'Image Compression',cat:'Computer Vision',back:'Each image is a high-dimensional vector (one value per pixel). PCA finds a compact basis for image representation, enabling face recognition and compression.'},
+  {icon:'🧬',title:'Bioinformatics',cat:'Life Sciences',back:'Gene expression data has tens of thousands of features per sample. PCA identifies which genes drive the most variation between healthy and diseased tissue.'},
+  {icon:'📈',title:'Finance',cat:'Quantitative Finance',back:'Stock returns across hundreds of assets are correlated. PCA extracts latent factors (market risk, sector effects) that explain most portfolio movement.'},
+  {icon:'📡',title:'Signal Processing',cat:'Engineering',back:'Sensor arrays produce correlated signals. PCA separates independent sources — used in EEG brain-signal analysis and audio source separation (ICA is a PCA extension).'},
+  {icon:'🌡️',title:'Climate Science',cat:'Environmental',back:'Climate datasets have thousands of spatial locations and time points. PCA finds dominant spatial patterns of variability — e.g. El Niño modes in sea-surface temperature.'},
+  {icon:'💊',title:'Drug Discovery',cat:'Pharmacology',back:'Molecular descriptor datasets have hundreds of chemical features. PCA helps visualise chemical space, cluster similar compounds, and identify structure-activity relationships.'},
+  {icon:'🏭',title:'Quality Control',cat:'Manufacturing',back:'Sensor readings from industrial processes are correlated. PCA monitors multivariate process health — a point far from the PCA model signals an anomaly.'},
+  {icon:'🗣️',title:'Natural Language',cat:'NLP',back:'LSA (Latent Semantic Analysis) applies PCA to word-document matrices. It discovers latent topics by finding directions of maximum semantic variation.'},
+  {icon:'🎮',title:'Dimensionality Reduction',cat:'Reinforcement Learning',back:'State spaces in RL can be enormous. PCA (or its nonlinear extensions like PCA+kernels) compresses state representations, making learning tractable.'},
+  {icon:'🔬',title:'Spectroscopy',cat:'Analytical Chemistry',back:'Spectral data has hundreds of wavelength bands. PCA identifies which wavelength combinations distinguish chemical components, enabling non-destructive material analysis.'},
+];
+(()=>{
+  const g=document.getElementById('appGrid');
+  APPS.forEach(a=>{
+    const fc=document.createElement('div');fc.className='flip-card';
+    fc.innerHTML=`<div class="flip-inner"><div class="flip-face flip-front"><div class="fc-icon">${a.icon}</div><div class="fc-title">${a.title}</div><div class="fc-hint">${a.cat} · click to flip</div></div><div class="flip-face flip-back"><div class="fc-cat">${a.cat}</div><p class="fc-back-text">${a.back}</p></div></div>`;
+    fc.addEventListener('click',()=>fc.classList.toggle('flipped'));
+    g.appendChild(fc);
+  });
+})();
+
+// ─── CODE ──────────────────────────────────────────────────────────
+const CODE_BLOCKS=[
+  {label:'1. Setup',code:`<span class="cm"># pip install pandas scikit-learn matplotlib seaborn</span>
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> StandardScaler
+<span class="kw">from</span> sklearn.decomposition <span class="kw">import</span> PCA
+<span class="kw">import</span> matplotlib.pyplot <span class="kw">as</span> plt
+<span class="kw">import</span> seaborn <span class="kw">as</span> sns`,desc:'Import all required libraries. StandardScaler handles mean-centering and unit-variance scaling. PCA from scikit-learn does the full eigendecomposition.'},
+  {label:'2. Load data',code:`url = <span class="st">"https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv"</span>
+df = pd.read_csv(url, sep=<span class="st">";"</span>)
+
+X = df.drop(<span class="st">"quality"</span>, axis=<span class="nm">1</span>)  <span class="cm"># 11 chemical features</span>
+y = df[<span class="st">"quality"</span>]              <span class="cm"># quality labels (3–8)</span>
+
+<span class="fn">print</span>(X.shape)   <span class="cm"># (1599, 11)</span>
+<span class="fn">print</span>(X.describe())`,desc:'Load the red wine dataset from UCI. X contains 11 chemical measurements per wine. y contains quality ratings. We have 1,599 wines.'},
+  {label:'3. Standardise',code:`<span class="cm"># CRITICAL: always standardise before PCA</span>
+<span class="cm"># Variables with larger scales dominate the covariance matrix</span>
+scaler = <span class="fn">StandardScaler</span>()
+X_scaled = scaler.<span class="fn">fit_transform</span>(X)
+
+<span class="cm"># Each feature now has mean=0, std=1</span>
+<span class="fn">print</span>(<span class="st">f"Mean per feature: {X_scaled.mean(axis=0).round(3)}"</span>)
+<span class="fn">print</span>(<span class="st">f"Std per feature:  {X_scaled.std(axis=0).round(3)}"</span>)`,desc:'StandardScaler subtracts the mean and divides by standard deviation for each feature. Without this, features measured in large units (like total SO₂ in mg/L) dominate purely due to scale.'},
+  {label:'4. Fit PCA',code:`<span class="cm"># Fit PCA — keep all components first to explore</span>
+pca = <span class="fn">PCA</span>()
+X_pca = pca.<span class="fn">fit_transform</span>(X_scaled)
+
+<span class="cm"># Variance explained per component</span>
+var_ratio = pca.explained_variance_ratio_
+<span class="fn">print</span>(np.<span class="fn">round</span>(var_ratio * <span class="nm">100</span>, <span class="nm">1</span>))
+<span class="cm"># Output: [28.5, 17.7, 14.2, 9.9, 7.8, ...]</span>
+
+<span class="cm"># Cumulative variance</span>
+cumulative = np.<span class="fn">cumsum</span>(var_ratio)
+<span class="cm"># How many PCs needed for 80% variance?</span>
+n_80 = np.<span class="fn">argmax</span>(cumulative >= <span class="nm">0.80</span>) + <span class="nm">1</span>
+<span class="fn">print</span>(<span class="st">f"Need {n_80} PCs for 80% variance"</span>)`,desc:'PCA() builds the covariance matrix, computes eigenpairs, and sorts them. explained_variance_ratio_ gives the fraction of total variance each PC captures.'},
+  {label:'5. Keep k PCs',code:`<span class="cm"># Keep only 3 components (captures ~60% variance)</span>
+pca3 = <span class="fn">PCA</span>(n_components=<span class="nm">3</span>)
+X_reduced = pca3.<span class="fn">fit_transform</span>(X_scaled)
+
+<span class="fn">print</span>(<span class="st">f"Shape: {X.shape} → {X_reduced.shape}"</span>)
+<span class="cm"># Shape: (1599, 11) → (1599, 3)</span>
+
+<span class="cm"># Auto-select for 90% variance</span>
+pca_auto = <span class="fn">PCA</span>(n_components=<span class="nm">0.90</span>)
+X_auto = pca_auto.<span class="fn">fit_transform</span>(X_scaled)
+<span class="fn">print</span>(<span class="st">f"Auto-selected {pca_auto.n_components_} components"</span>)`,desc:'Specify n_components as an integer (exact count) or a float between 0 and 1 (variance threshold). The (1599, 11) dataset is compressed to (1599, 3) while keeping ~60% of information.'},
+  {label:'6. Interpret',code:`<span class="cm"># What does each PC measure? (the loadings)</span>
+loadings = pd.<span class="fn">DataFrame</span>(
+    pca3.components_.T,
+    columns=[<span class="st">f"PC{i+1}"</span> <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="nm">3</span>)],
+    index=X.columns
+)
+<span class="fn">print</span>(loadings.<span class="fn">round</span>(<span class="nm">3</span>))
+
+<span class="cm"># Large absolute loading = strong contribution to that PC</span>
+<span class="cm"># PC1 might show: alcohol (+), density (-), sulphates (+)</span>
+<span class="cm"># → interpreted as "body and richness"</span>`,desc:'pca.components_ gives the eigenvectors (loadings). Each row is a PC direction, each column is an original feature. Large absolute values mean that feature drives that component.'},
+  {label:'7. Visualise',code:`fig, (ax1, ax2) = plt.<span class="fn">subplots</span>(<span class="nm">1</span>, <span class="nm">2</span>, figsize=(<span class="nm">12</span>, <span class="nm">4</span>))
+
+<span class="cm"># Scree plot — elbow = good cutoff point</span>
+ax1.<span class="fn">bar</span>(<span class="fn">range</span>(<span class="nm">1</span>, <span class="nm">12</span>), pca.explained_variance_ratio_*<span class="nm">100</span>,
+       color=<span class="st">"#e05c2a"</span>)
+ax1.<span class="fn">set_xlabel</span>(<span class="st">"Principal Component"</span>)
+ax1.<span class="fn">set_ylabel</span>(<span class="st">"Variance Explained (%)"</span>)
+ax1.<span class="fn">set_title</span>(<span class="st">"Scree Plot"</span>)
+
+<span class="cm"># 2D PCA scatter coloured by quality</span>
+scatter = ax2.<span class="fn">scatter</span>(X_pca[:,<span class="nm">0</span>], X_pca[:,<span class="nm">1</span>],
+                      c=y, cmap=<span class="st">"RdYlBu"</span>, alpha=<span class="nm">0.5</span>, s=<span class="nm">18</span>)
+ax2.<span class="fn">set_xlabel</span>(<span class="st">"PC1 (Body)"</span>)
+ax2.<span class="fn">set_ylabel</span>(<span class="st">"PC2 (Acidity)"</span>)
+plt.<span class="fn">colorbar</span>(scatter, label=<span class="st">"Quality"</span>)
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">show</span>()`,desc:'The scree plot shows the variance elbow. The 2D scatter lets you visually check if high-quality wines cluster separately in PCA space — a key validation step.'},
+];
+(()=>{
+  const tabs=document.getElementById('codeTabs');
+  const panels=document.getElementById('codePanels');
+  CODE_BLOCKS.forEach((b,i)=>{
+    const tb=document.createElement('button');tb.className='code-tab'+(i===0?' active':'');
+    tb.textContent=b.label;tb.onclick=()=>{
+      document.querySelectorAll('.code-tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.code-panel').forEach(p=>p.classList.remove('active'));
+      tb.classList.add('active');document.getElementById('cp'+i).classList.add('active');
+    };
+    tabs.appendChild(tb);
+    const div=document.createElement('div');div.className='code-panel'+(i===0?' active':'');div.id='cp'+i;
+    div.innerHTML=`<pre>${b.code}</pre><div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:.45rem;padding:.65rem .85rem;margin-top:.5rem;font-size:.8rem;color:rgba(255,255,255,.72);line-height:1.55">${b.desc}</div>`;
+    panels.appendChild(div);
+  });
+})();
+
+// ─── QUIZ BANK (30 questions) ─────────────────────────────────────
+const QBANK=[
+  {cat:'Fundamentals',q:'What does PCA stand for?',opts:['Predictive Component Analysis','Principal Component Analysis','Principal Covariance Algorithm','Projected Component Array'],ans:1,fb:'PCA stands for Principal Component Analysis — a dimensionality reduction technique developed by Karl Pearson in 1901.'},
+  {cat:'Fundamentals',q:'What is the primary goal of PCA?',opts:['To classify data into categories','To find directions of maximum variance in the data','To normalise all features to unit range','To remove outliers from the dataset'],ans:1,fb:'PCA finds new axes (principal components) that maximise the variance of the projected data, preserving as much information as possible.'},
+  {cat:'Fundamentals',q:'How does PCA create principal components?',opts:['By selecting the k most important original features','By clustering features into groups','By finding weighted linear combinations of all original features','By applying a nonlinear transformation to each feature'],ans:2,fb:'Each PC is a weighted linear combination of ALL original features — not a subset. The weights are the elements of the eigenvector.'},
+  {cat:'Fundamentals',q:'What geometric property must all principal components satisfy with respect to each other?',opts:['They must be parallel','They must be orthogonal (perpendicular)','They must have equal length','They must point toward the origin'],ans:1,fb:'All PCs are mutually orthogonal. This ensures they are statistically uncorrelated and each captures independent information.'},
+  {cat:'Fundamentals',q:'What does it mean for two principal components to be uncorrelated?',opts:['Their dot product equals 1','Knowing a data point\'s score on PC1 gives no information about its score on PC2','They capture the same variance','They are computed from different subsets of the data'],ans:1,fb:'Uncorrelated means knowing one score gives zero information about the other — they capture completely independent aspects of the data.'},
+  {cat:'Variance',q:'If eigenvalues are λ = [6, 3, 1], what percentage of variance does PC1 explain?',opts:['30%','50%','60%','67%'],ans:2,fb:'% variance = λ₁ / Σλ = 6 / (6+3+1) = 6/10 = 60%. Always sum all eigenvalues first.'},
+  {cat:'Variance',q:'If eigenvalues are λ = [5, 3, 2], what is the cumulative variance explained by PC1 and PC2 together?',opts:['50%','70%','80%','100%'],ans:2,fb:'(5+3)/(5+3+2) = 8/10 = 80%. Cumulative variance sums the top-k eigenvalues divided by the total.'},
+  {cat:'Variance',q:'What does a large eigenvalue indicate?',opts:['That the corresponding PC captures little variance','That the corresponding PC captures a lot of variance','That the data is uniformly distributed along that axis','That the feature is an outlier'],ans:1,fb:'A large eigenvalue λ means the objective function vᵀCv = λ is large — i.e. the projected data has high variance along that direction.'},
+  {cat:'Variance',q:'Why is PC1 always chosen as the eigenvector with the LARGEST eigenvalue?',opts:['Because it is computed first in the algorithm','Because it corresponds to the maximum variance direction','Because larger eigenvalues are easier to compute','Because the eigenvectors are sorted alphabetically'],ans:1,fb:'Substituting Cv = λv into vᵀCv gives vᵀCv = λ. To maximise the objective, we choose the eigenvector with the largest λ.'},
+  {cat:'Variance',q:'A dataset has 10 variables. If the top 4 eigenvalues account for 85% of variance, what fraction of information is LOST by keeping only 4 PCs?',opts:['85%','15%','4%','It depends on the dataset'],ans:1,fb:'Keeping 4 PCs preserves 85% of variance, so 15% is discarded. Whether this is acceptable depends on the application.'},
+  {cat:'Mathematics',q:'What is the covariance matrix C?',opts:['C = XᵀX','C = E{(x−m)(x−m)ᵀ}','C = VΛVᵀ directly','C = the correlation matrix scaled by n'],ans:1,fb:'C = E{(x−m)(x−m)ᵀ} is the expected outer product of mean-centred data. It encodes how every pair of variables co-varies.'},
+  {cat:'Mathematics',q:'The eigenvalue equation in PCA is:',opts:['Cv = λ','Cv = λv','Cv = v/λ','vᵀCv = 1'],ans:1,fb:'Cv = λv is the eigenvalue equation. v is the eigenvector (PC direction), λ is the eigenvalue (variance along that direction).'},
+  {cat:'Mathematics',q:'Why must we subtract the mean before computing PCA?',opts:['To make the numbers smaller','So that maximising projection magnitude equals maximising variance','To remove outliers','Because the covariance formula requires it for numerical stability'],ans:1,fb:'Without centering, directions pointing toward data with high absolute values score well even if those points are all identical. Centering ensures we measure spread (variance), not location.'},
+  {cat:'Mathematics',q:'What is the Lagrange multiplier λ in the PCA optimisation?',opts:['The learning rate','The number of components to keep','The variance captured by the principal component','The length of the data vector'],ans:2,fb:'Setting the derivative of L(v,λ) = vᵀCv − λ(vᵀv−1) to zero gives Cv = λv. Substituting back: vᵀCv = λ. So λ equals the variance captured.'},
+  {cat:'Mathematics',q:'Why do we add a unit-length constraint vᵀv = 1 in PCA optimisation?',opts:['To make the computation faster','Without it, v could grow infinitely large making the objective unbounded','To ensure v is a probability vector','To guarantee v is unique'],ans:1,fb:'vᵀCv is unbounded — just scale v to infinity and it grows forever. The constraint |v| = 1 makes the problem well-posed.'},
+  {cat:'Mathematics',q:'An n×n covariance matrix has how many eigenvalue-eigenvector pairs?',opts:['n/2','n−1','n','n²'],ans:2,fb:'A symmetric n×n matrix always has exactly n eigenvalue-eigenvector pairs. For a 12-variable dataset, we get 12 PCs.'},
+  {cat:'Mathematics',q:'The covariance matrix C is always:',opts:['Diagonal','Square and symmetric','Positive definite only if the data is Gaussian','Orthogonal'],ans:1,fb:'C = E{(x−m)(x−m)ᵀ} is always symmetric (C = Cᵀ) because C[i,j] = C[j,i]. It is also positive semi-definite.'},
+  {cat:'Dot Product',q:'What does u · v = 0 tell you geometrically?',opts:['u and v point in the same direction','u and v are perpendicular (orthogonal)','u and v have the same length','u has zero length'],ans:1,fb:'u · v = |u||v|cosθ. When cosθ = 0, the vectors are perpendicular (θ = 90°). This is why perpendicular PCs have zero dot product.'},
+  {cat:'Dot Product',q:'In PCA, what does the dot product vᵀx represent?',opts:['The cosine of the angle between v and x','The projection (score) of data point x onto PC direction v','The distance from x to the origin','The covariance between v and x'],ans:1,fb:'vᵀx is the projection of x onto direction v — a single number giving the coordinate of wine x along that PC axis.'},
+  {cat:'Dot Product',q:'If v = [1, 0] and x = [3, 4], what is vᵀx?',opts:['0','3','4','5'],ans:1,fb:'vᵀx = 1×3 + 0×4 = 3. The dot product with a unit vector along the x-axis simply reads off the x-component.'},
+  {cat:'Dot Product',q:'What does a large magnitude dot product vᵀx indicate?',opts:['The point x is close to the origin','The point x is far from the mean when projected onto v — it contributes to high variance','The angle between v and x is 90°','The point x is an outlier'],ans:1,fb:'Large |vᵀx| means x projects far along v — it has a large displacement from the centre after projection, contributing to large variance.'},
+  {cat:'Procedure',q:'What is the correct order of steps in PCA?',opts:['Eigendecompose → Centre → Covariance','Centre → Covariance → Eigendecompose','Covariance → Centre → Eigendecompose','Centre → Eigendecompose → Covariance'],ans:1,fb:'Step 1: Centre the data (subtract mean). Step 2: Compute covariance matrix. Step 3: Eigendecompose to get PCs.'},
+  {cat:'Procedure',q:'In scikit-learn, which class is used to apply PCA?',opts:['sklearn.pca.PCA','sklearn.decomposition.PCA','sklearn.preprocessing.PCA','sklearn.linear_model.PCA'],ans:1,fb:'from sklearn.decomposition import PCA. The decomposition module contains matrix factorisation methods including PCA, NMF, and ICA.'},
+  {cat:'Procedure',q:'Why should you use StandardScaler BEFORE PCA in scikit-learn?',opts:['It is a convention but not mathematically necessary','Features with large scales dominate the covariance matrix due to scale, not informativeness','StandardScaler computes the covariance matrix','PCA requires all features to be in [0,1] range'],ans:1,fb:'PCA is scale-sensitive. A feature measured in mg/L vs one in % will dominate variance calculations not because of information content but because of its larger numerical range.'},
+  {cat:'Procedure',q:'What does pca.components_ contain?',opts:['The original data projected into PC space','The eigenvectors (loadings matrix) — the PC directions','The eigenvalues','The cumulative explained variance'],ans:1,fb:'pca.components_ is the loadings matrix with shape (n_components, n_features). Each row is an eigenvector showing how that PC blends the original features.'},
+  {cat:'Interpretation',q:'In PCA, what does a large negative loading for a variable on PC1 mean?',opts:['That variable is uncorrelated with PC1','When PC1 score is high, that variable tends to be below its mean','That variable should be removed from the analysis','The variable has been incorrectly scaled'],ans:1,fb:'A loading of −0.43 for density means: wines with high PC1 scores tend to have low density. The sign captures the direction of the relationship.'},
+  {cat:'Interpretation',q:'What is a "scree plot" used for?',opts:['Plotting PCA scores coloured by class labels','Choosing how many PCs to keep by looking for an elbow in variance explained','Comparing PCA with other methods','Checking if the data is normally distributed'],ans:1,fb:'A scree plot shows variance explained vs PC number. The "elbow" (where the curve flattens) suggests a good number of components to retain.'},
+  {cat:'Interpretation',q:'PC12 in a 12-variable dataset has the smallest eigenvalue. What does this mean?',opts:['It is the most important component','Wines are almost identical along this direction — it can be discarded with minimal information loss','It is computed last and has the most noise','The eigenvector for PC12 is the longest'],ans:1,fb:'The smallest eigenvalue means the smallest variance along that direction. Wine differences along PC12 are tiny — discarding it loses very little information.'},
+  {cat:'Applications',q:'LSA (Latent Semantic Analysis) in NLP is an application of PCA to:',opts:['Sentence classification','Word-document frequency matrices to discover latent topics','Image captioning','Speech recognition'],ans:1,fb:'LSA applies SVD (equivalent to PCA) to word-document matrices. The resulting components capture latent semantic topics — directions of maximum semantic variance.'},
+  {cat:'Applications',q:'In what scenario would PCA likely FAIL to find useful components?',opts:['When the data has many correlated features','When the most important relationships between variables are highly nonlinear','When the dataset has thousands of samples','When features have different units'],ans:1,fb:'PCA finds linear combinations. If the true structure is nonlinear (e.g. a spiral), linear PCs will not capture it. Kernel PCA or UMAP may work better in those cases.'},
+];
+
+let qSelected=[],qCur=0,qResults={};
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+function startQuiz(){
+  qSelected=shuffle(QBANK).slice(0,10);
+  qCur=0;qResults={};
+  document.getElementById('quizResult').style.display='none';
+  document.getElementById('quizMain').style.display='block';
+  renderQ();
+}
+
+function renderQ(){
+  const q=qSelected[qCur];
+  document.getElementById('qCounter').textContent=`Question ${qCur+1} of ${qSelected.length}`;
+  document.getElementById('qCat').textContent=q.cat;
+  document.getElementById('qQuestion').textContent=q.q;
+
+  const opts=document.getElementById('qOptions');opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const b=document.createElement('button');b.className='quiz-opt';b.textContent=o;
+    const done=qResults[qCur]!==undefined;
+    if(done){
+      b.disabled=true;b.style.opacity='.5';
+      if(i===q.ans){b.classList.add('correct');b.style.opacity='1';}
+      if(i===qResults[qCur]&&i!==q.ans){b.classList.add('wrong');b.style.opacity='1';}
+    } else {
+      b.onclick=()=>answerQ(i);
+    }
+    opts.appendChild(b);
+  });
+
+  const fb=document.getElementById('qFb');
+  if(qResults[qCur]!==undefined){
+    fb.className='quiz-fb show '+(qResults[qCur]===q.ans?'ok':'bad');
+    fb.innerHTML=(qResults[qCur]===q.ans?'✓ ':'✗ ')+q.fb;
+  } else {fb.className='quiz-fb';}
+
+  // dots
+  const dots=document.getElementById('qDots');dots.innerHTML='';
+  qSelected.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='quiz-dot'+(i===qCur?' cur':qResults[i]===qSelected[i].ans?' ok':qResults[i]!==undefined?' bad':'');
+    dots.appendChild(d);
+  });
+
+  const cor=Object.values(qResults).filter((v,i)=>v===qSelected[i].ans).length;
+  document.getElementById('qScoreBadge').textContent=`${cor} / ${Object.keys(qResults).length}`;
+  document.getElementById('qPrev').disabled=qCur===0;
+  document.getElementById('qNext').disabled=qResults[qCur]===undefined&&qCur<qSelected.length-1;
+  document.getElementById('qNavHint').textContent=qResults[qCur]!==undefined?'':'Answer to advance';
+}
+
+function answerQ(i){
+  if(qResults[qCur]!==undefined)return;
+  qResults[qCur]=i;
+  renderQ();
+  if(Object.keys(qResults).length===qSelected.length){
+    setTimeout(()=>showResult(),900);
+  }
+}
+
+function qNav(d){
+  qCur=Math.max(0,Math.min(qSelected.length-1,qCur+d));
+  renderQ();
+}
+
+function showResult(){
+  const cor=Object.values(qResults).filter((v,i)=>v===qSelected[i].ans).length;
+  document.getElementById('quizMain').style.display='none';
+  document.getElementById('quizResult').style.display='block';
+  document.getElementById('rScore').textContent=cor+'/10';
+  const msgs=['Keep reviewing and try again! Revisit the key formulas.','Good effort! Review the questions you missed.','Solid understanding of PCA fundamentals!','Great work! Strong grasp of PCA.','Perfect! Outstanding understanding of PCA.'];
+  document.getElementById('rMsg').textContent=msgs[Math.min(4,Math.floor(cor/2))];
+}
+
+startQuiz();
+
+// smooth scroll for nav
+document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href'))?.scrollIntoView({behavior:'smooth'});}));
+</script>
+</body>
+</html>
