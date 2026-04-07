@@ -228,6 +228,7 @@ pre {
 <header>
   <div>
     <div class="logo">PCA <span>Interactive</span></div>
+    <div class="subtitle">BT3017</div>
   </div>
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showPage('viz')" id="tab-viz">Visualisations</button>
@@ -257,24 +258,19 @@ pre {
       <div class="two-col">
         <div>
           <div class="canvas-card">
-            <div class="canvas-label">Drag the axis — watch variance change</div>
-            <canvas id="vcv" width="480" height="320" style="width:100%;cursor:grab"></canvas>
-            <div class="stat-row">
-              <div class="stat-label">Variance of projected points</div>
-              <div class="var-track"><div class="var-fill" id="vfill" style="width:40%;background:var(--rust)"></div></div>
-              <div class="stat-val" id="vstat">--</div>
-            </div>
-            <div class="ctrl-row" style="margin-top:.6rem">
-
-              <button class="btn-sm" id="va-btn-0" onclick="setVA(0)">Horizontal</button>
-              <button class="btn-sm" id="va-btn-90" onclick="setVA(90)">Vertical</button>
-              <button class="btn-sm" id="va-btn-142" onclick="setVA(142)">PC1 optimal ✓</button>
-              <button class="btn-sm" id="va-btn-52" onclick="setVA(52)">PC2 (⊥ PC1)</button>
-            </div>
+            <div class="canvas-label">Drag the axis to rotate it</div>
+            <canvas id="vcv" width="480" height="300" style="width:100%;cursor:grab"></canvas>
           </div>
-          <div class="canvas-card" style="margin-top:1rem">
-            <div class="canvas-label">1D projection — how spread out are the points?</div>
-            <canvas id="p1d" width="480" height="72" style="width:100%"></canvas>
+          <div class="canvas-card" style="margin-top:.8rem">
+            <div class="canvas-label">1D projection — spread of points along the current axis</div>
+            <canvas id="p1d" width="480" height="80" style="width:100%"></canvas>
+            <p style="font-size:.74rem;color:var(--muted);margin-top:.5rem;line-height:1.55">Wide spread = more information preserved. Tight cluster = information lost. PC1 gives the widest possible spread.</p>
+          </div>
+          <div class="ctrl-row" style="margin-top:.6rem">
+            <button class="btn-sm" id="va-btn-0"   onclick="setVA(0)">Horizontal</button>
+            <button class="btn-sm" id="va-btn-90"  onclick="setVA(90)">Vertical</button>
+            <button class="btn-sm" id="va-btn-142" onclick="setVA(142)">PC1 optimal ✓</button>
+            <button class="btn-sm" id="va-btn-52"  onclick="setVA(52)">PC2 (⊥ PC1)</button>
           </div>
         </div>
         <div>
@@ -287,13 +283,13 @@ pre {
             <h3 style="color:var(--teal);margin-bottom:.5rem">Try each preset</h3>
             <div style="display:flex;flex-direction:column;gap:.45rem;margin-top:.3rem">
               <div style="font-size:.81rem;padding:.4rem .65rem;background:rgba(255,255,255,.04);border-left:3px solid #444;border-radius:0 .35rem .35rem 0">
-                <strong>Horizontal:</strong> the cloud is narrow left-to-right. Points clump on the 1D line.
+                <strong>Horizontal:</strong> slightly spread, but still not optimal.
               </div>
               <div style="font-size:.81rem;padding:.4rem .65rem;background:rgba(255,255,255,.04);border-left:3px solid #444;border-radius:0 .35rem .35rem 0">
-                <strong>Vertical:</strong> better, but still not optimal.
+                <strong>Vertical:</strong> points collapse together on the 1D strip — most information lost.
               </div>
               <div style="font-size:.81rem;padding:.4rem .65rem;background:rgba(34,211,184,.08);border-left:3px solid var(--teal);border-radius:0 .35rem .35rem 0">
-                <strong style="color:var(--teal)">PC1:</strong> variance bar hits maximum. Points are maximally spread. This is the direction PCA finds automatically.
+                <strong style="color:var(--teal)">PC1:</strong> points are maximally spread on the strip. This is the direction PCA finds automatically.
               </div>
               <div style="font-size:.81rem;padding:.4rem .65rem;background:rgba(59,130,246,.08);border-left:3px solid var(--blue);border-radius:0 .35rem .35rem 0">
                 <strong style="color:#93c5fd">PC2:</strong> perpendicular to PC1. Captures remaining spread. Independent of PC1.
@@ -301,12 +297,12 @@ pre {
             </div>
           </div>
           <div class="info">
-            <p>The data cloud is an elongated <strong>ellipse</strong>. PC1 is the long axis of that ellipse, PC2 is the short axis. PCA finds the axes of the data's natural shape — even in 12 dimensions.</p>
+            <p>The data cloud is an elongated <strong>ellipse</strong>. PC1 is the long axis of that ellipse, PC2 is the short axis. PCA finds these axes automatically — even in 12 dimensions.</p>
           </div>
           <div class="card" style="margin-top:1rem">
-            <h3 style="color:var(--rust);margin-bottom:.4rem">Current angle readout</h3>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:1rem;color:var(--gold);margin:.3rem 0" id="vangle">35°</div>
-            <div style="font-size:.78rem;color:var(--muted)">Drag the canvas or use the preset buttons to rotate the projection axis.</div>
+            <h3 style="color:var(--rust);margin-bottom:.4rem">Current axis angle</h3>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;color:var(--gold);margin:.3rem 0" id="vangle">35°</div>
+            <div style="font-size:.78rem;color:var(--muted)">Drag the canvas or click a preset to change the projection axis.</div>
           </div>
         </div>
       </div>
@@ -336,10 +332,10 @@ pre {
               </div>
             </div>
             <div class="ctrl-row" style="margin-top:.6rem">
-              <button class="btn-sm" id="dp-btn-0" onclick="setDP(3,2,3,2)">Same dir</button>
-<button class="btn-sm" id="dp-btn-1" onclick="setDP(3,0,0,3)">Perpendicular</button>
-<button class="btn-sm" id="dp-btn-2" onclick="setDP(3,2,-3,-2)">Opposite</button>
-<button class="btn-sm" id="dp-btn-3" onclick="setDP(0.46,-0.43,3,2)">Wine PC1</button>
+              <button class="btn-sm" onclick="setDP(3,2,3,2)">Same dir</button>
+              <button class="btn-sm" onclick="setDP(3,0,0,3)">Perpendicular</button>
+              <button class="btn-sm" onclick="setDP(3,2,-3,-2)">Opposite</button>
+              <button class="btn-sm hi" onclick="setDP(0.46,-0.43,3,2)">Wine PC1</button>
             </div>
           </div>
         </div>
@@ -535,121 +531,150 @@ function setTool(id){
 }
 
 // ─── SHARED DATA ─────────────────────────────────────────────────
-const rng=(s=>()=>{s=(s*1664525+1013904223)&0xffffffff;return(s>>>0)/0xffffffff;})(42);
-function genPts(n){
-  const a=[];
-  for(let i=0;i<n;i++){
-    const t=(rng()-.5)*4,p=(rng()-.5)*1.3,A=-38*Math.PI/180;
-    a.push({x:t*Math.cos(A)-p*Math.sin(A),y:t*Math.sin(A)+p*Math.cos(A),g:t>1.2?'bold':t<-1.2?'light':'med'});
-  }
-  return a;
-}
-const PTS=genPts(48);
-const PC={bold:'#e8a06a',light:'#4db8a8',med:'#88b4d8'};
-function toSc(x,y,W,H,s){return[W/2+x*s,H/2-y*s];}
+// Hardcoded points strongly elongated along ~142° (PC1 direction)
+// PC1 angle = 142°, so cos(142°)≈-0.788, sin(142°)≈0.616
+// Points are generated along this axis with tight perpendicular spread
+const PC1_DEG = 142;
+const PC1_RAD = PC1_DEG * Math.PI / 180;
+const PC2_DEG = 52;
+
+// Manually placed points: [along-PC1-axis, perpendicular-to-PC1]
+const RAW_PTS = [
+  [-3.8, 0.1], [-3.2,-0.3], [-2.7, 0.4], [-2.1,-0.2], [-1.6, 0.3],
+  [-1.0,-0.4], [-0.5, 0.2], [ 0.0,-0.1], [ 0.4, 0.3], [ 0.9,-0.3],
+  [ 1.4, 0.4], [ 1.9,-0.2], [ 2.4, 0.1], [ 3.0,-0.3], [ 3.6, 0.2],
+  [ 2.8, 0.5], [-2.4, 0.5], [ 0.7,-0.5]
+];
+
+// Rotate into canvas coordinates along PC1 direction
+const PTS = RAW_PTS.map(([t, p]) => ({
+  x:  t * Math.cos(PC1_RAD) - p * Math.sin(PC1_RAD),
+  y:  t * Math.sin(PC1_RAD) + p * Math.cos(PC1_RAD),
+  col: t > 1.5 ? '#e8a06a' : t < -1.5 ? '#4db8a8' : '#88b4d8'
+}));
 
 // ─── VARIANCE CANVAS ─────────────────────────────────────────────
-const vcv=document.getElementById('vcv');
-const vctx=vcv.getContext('2d');
-const p1d=document.getElementById('p1d');
-const p1ctx=p1d.getContext('2d');
-let vAngle=35,vDrag=false;
-const PC1A=142;
+const vcv = document.getElementById('vcv');
+const vctx = vcv.getContext('2d');
+const p1d = document.getElementById('p1d');
+const p1ctx = p1d.getContext('2d');
+let vAngle = 35, vDrag = false;
 
-function setVA(a){
+function setVA(a) {
   vAngle = a;
   document.querySelectorAll('[id^="va-btn-"]').forEach(b => b.classList.remove('hi'));
   const active = document.getElementById('va-btn-' + a);
-  if(active) active.classList.add('hi');
+  if (active) active.classList.add('hi');
   drawVariance();
 }
 
-vcv.addEventListener('mousedown',()=>vDrag=true);
-vcv.addEventListener('mouseup',()=>vDrag=false);
-vcv.addEventListener('mouseleave',()=>vDrag=false);
-vcv.addEventListener('mousemove',e=>{
-  if(!vDrag)return;
-  const r=vcv.getBoundingClientRect();
-  const mx=(e.clientX-r.left)*(vcv.width/r.width)-vcv.width/2;
-  const my=(e.clientY-r.top)*(vcv.height/r.height)-vcv.height/2;
-  vAngle=((Math.atan2(-my,mx)*180/Math.PI)%180+180)%180;
+vcv.addEventListener('mousedown', () => vDrag = true);
+vcv.addEventListener('mouseup',   () => vDrag = false);
+vcv.addEventListener('mouseleave',() => vDrag = false);
+vcv.addEventListener('mousemove', e => {
+  if (!vDrag) return;
+  const r = vcv.getBoundingClientRect();
+  const mx = (e.clientX - r.left) * (vcv.width  / r.width)  - vcv.width  / 2;
+  const my = (e.clientY - r.top)  * (vcv.height / r.height) - vcv.height / 2;
+  vAngle = ((Math.atan2(-my, mx) * 180 / Math.PI) % 180 + 180) % 180;
+  document.querySelectorAll('[id^="va-btn-"]').forEach(b => b.classList.remove('hi'));
   drawVariance();
 });
-vcv.addEventListener('touchstart',e=>{vDrag=true;e.preventDefault();},{passive:false});
-vcv.addEventListener('touchend',()=>vDrag=false);
-vcv.addEventListener('touchmove',e=>{
-  if(!vDrag)return;e.preventDefault();
-  const r=vcv.getBoundingClientRect(),t=e.touches[0];
-  const mx=(t.clientX-r.left)*(vcv.width/r.width)-vcv.width/2;
-  const my=(t.clientY-r.top)*(vcv.height/r.height)-vcv.height/2;
-  vAngle=((Math.atan2(-my,mx)*180/Math.PI)%180+180)%180;
+vcv.addEventListener('touchstart', e => { vDrag = true; e.preventDefault(); }, { passive: false });
+vcv.addEventListener('touchend',   () => vDrag = false);
+vcv.addEventListener('touchmove',  e => {
+  if (!vDrag) return; e.preventDefault();
+  const r = vcv.getBoundingClientRect(), t = e.touches[0];
+  const mx = (t.clientX - r.left) * (vcv.width  / r.width)  - vcv.width  / 2;
+  const my = (t.clientY - r.top)  * (vcv.height / r.height) - vcv.height / 2;
+  vAngle = ((Math.atan2(-my, mx) * 180 / Math.PI) % 180 + 180) % 180;
+  document.querySelectorAll('[id^="va-btn-"]').forEach(b => b.classList.remove('hi'));
   drawVariance();
-},{passive:false});
+}, { passive: false });
 
-function drawVariance(){
-  const W=vcv.width,H=vcv.height,s=50;
-  const cx=W/2,cy=H/2;
-  const rad=vAngle*Math.PI/180;
+function drawVariance() {
+  const W = vcv.width, H = vcv.height;
+  const cx = W / 2, cy = H / 2;
+  const SCALE = 48; // pixels per unit
+  const rad = vAngle * Math.PI / 180;
 
-  // PC1 is at ~142°, PC2 is perpendicular (~52°)
-  const isPC1=Math.abs(vAngle-PC1A)<6;
-  const isPC2=Math.abs(vAngle-52)<6;
-  // colour: teal only when genuinely at PC1, neutral otherwise
-  const axC=isPC1?'#22d3b8':'rgba(255,255,255,.6)';
+  const isPC1 = Math.abs(vAngle - PC1_DEG) < 5;
+  const isPC2 = Math.abs(vAngle - PC2_DEG) < 5;
+  const axCol = isPC1 ? '#22d3b8' : isPC2 ? '#93c5fd' : 'rgba(255,255,255,.65)';
 
-  vctx.clearRect(0,0,W,H);
-  // subtle grid
-  vctx.strokeStyle='rgba(255,255,255,.04)';vctx.lineWidth=1;
-  for(let x=0;x<W;x+=50){vctx.beginPath();vctx.moveTo(x,0);vctx.lineTo(x,H);vctx.stroke();}
-  for(let y=0;y<H;y+=50){vctx.beginPath();vctx.moveTo(0,y);vctx.lineTo(W,y);vctx.stroke();}
-  // axes
-  vctx.strokeStyle='rgba(255,255,255,.1)';vctx.lineWidth=1;
-  vctx.beginPath();vctx.moveTo(24,cy);vctx.lineTo(W-24,cy);vctx.stroke();
-  vctx.beginPath();vctx.moveTo(cx,18);vctx.lineTo(cx,H-18);vctx.stroke();
+  vctx.clearRect(0, 0, W, H);
 
-  // projection axis — just a plain line, no arrowheads
-  const L=195,ax=Math.cos(rad)*L,ay=Math.sin(rad)*L;
-  vctx.strokeStyle=axC;vctx.lineWidth=2.5;
-  vctx.beginPath();vctx.moveTo(cx-ax,cy+ay);vctx.lineTo(cx+ax,cy-ay);vctx.stroke();
+  // faint grid
+  vctx.strokeStyle = 'rgba(255,255,255,.04)'; vctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 48) { vctx.beginPath(); vctx.moveTo(x,0); vctx.lineTo(x,H); vctx.stroke(); }
+  for (let y = 0; y < H; y += 48) { vctx.beginPath(); vctx.moveTo(0,y); vctx.lineTo(W,y); vctx.stroke(); }
 
-  // label at tip
-  vctx.font='bold 11px JetBrains Mono,monospace';vctx.fillStyle=axC;
-  const label=isPC1?'PC1':isPC2?'PC2':Math.round(vAngle)+'°';
-  vctx.fillText(label,cx+ax+5,cy-ay+4);
+  // compute projections first
+  const projs = PTS.map(p => p.x * Math.cos(rad) + p.y * Math.sin(rad));
 
-  document.getElementById('vangle').textContent=Math.round(vAngle)+'°';
-
-  // data points + projections
-  const projs=[];
-  PTS.forEach(p=>{
-    const[sx,sy]=toSc(p.x,p.y,W,H,s);
-    const proj=p.x*Math.cos(rad)-p.y*Math.sin(rad);
-    projs.push(proj);
-    const fx=cx+proj*Math.cos(rad)*s,fy=cy-proj*(-Math.sin(rad))*s;
-    vctx.strokeStyle='rgba(255,255,255,.07)';vctx.lineWidth=.8;vctx.setLineDash([3,3]);
-    vctx.beginPath();vctx.moveTo(sx,sy);vctx.lineTo(fx,fy);vctx.stroke();
+  // draw dashed drop lines from each point to its foot on the axis
+  PTS.forEach((p, i) => {
+    const sx = cx + p.x * SCALE;
+    const sy = cy - p.y * SCALE;
+    const pr = projs[i];
+    const fx = cx + pr * Math.cos(rad) * SCALE;
+    const fy = cy - pr * Math.sin(rad) * SCALE;
+    vctx.strokeStyle = 'rgba(255,255,255,.12)'; vctx.lineWidth = 1;
+    vctx.setLineDash([4, 4]);
+    vctx.beginPath(); vctx.moveTo(sx, sy); vctx.lineTo(fx, fy); vctx.stroke();
     vctx.setLineDash([]);
-    vctx.beginPath();vctx.arc(fx,fy,3,0,Math.PI*2);vctx.fillStyle=axC+'55';vctx.fill();
-    vctx.beginPath();vctx.arc(sx,sy,5.5,0,Math.PI*2);vctx.fillStyle=PC[p.g]+'cc';vctx.fill();
+    // foot dot
+    vctx.beginPath(); vctx.arc(fx, fy, 3.5, 0, Math.PI * 2);
+    vctx.fillStyle = axCol + '88'; vctx.fill();
   });
 
-  // variance
-  const mn=projs.reduce((a,b)=>a+b,0)/projs.length;
-  const variance=projs.reduce((s2,v)=>s2+(v-mn)**2,0)/projs.length;
-  const pct=Math.min(100,(variance/2.8)*100);
-  document.getElementById('vfill').style.width=pct+'%';
-  document.getElementById('vfill').style.background=isPC1?'#22d3b8':pct>50?'#e8a06a':'#555';
-  document.getElementById('vstat').textContent='Variance = '+variance.toFixed(3)+(isPC1?' — maximum! (PC1)':isPC2?' — PC2 direction':'');
+  // projection axis — full width line
+  const L = 220;
+  const ax = Math.cos(rad) * L, ay = Math.sin(rad) * L;
+  vctx.strokeStyle = axCol; vctx.lineWidth = 2.5;
+  vctx.beginPath(); vctx.moveTo(cx - ax, cy + ay); vctx.lineTo(cx + ax, cy - ay); vctx.stroke();
 
-  // 1D canvas
-  p1ctx.clearRect(0,0,p1d.width,p1d.height);
-  const PW=p1d.width,PH=p1d.height,lY=PH/2;
-  p1ctx.strokeStyle=axC;p1ctx.lineWidth=2;
-  p1ctx.beginPath();p1ctx.moveTo(16,lY);p1ctx.lineTo(PW-16,lY);p1ctx.stroke();
-  const pMin=Math.min(...projs),pMax=Math.max(...projs),pR=Math.max(pMax-pMin,.01);
-  PTS.forEach((p,i)=>{
-    const px=16+((projs[i]-pMin)/pR)*(PW-32);
-    p1ctx.beginPath();p1ctx.arc(px,lY,5,0,Math.PI*2);p1ctx.fillStyle=PC[p.g]+'cc';p1ctx.fill();
+  // axis label
+  vctx.font = 'bold 11px JetBrains Mono,monospace'; vctx.fillStyle = axCol;
+  const lbl = isPC1 ? 'PC1' : isPC2 ? 'PC2' : Math.round(vAngle) + '°';
+  vctx.fillText(lbl, cx + ax + 5, cy - ay + 4);
+
+  // data points on top
+  PTS.forEach(p => {
+    const sx = cx + p.x * SCALE;
+    const sy = cy - p.y * SCALE;
+    vctx.beginPath(); vctx.arc(sx, sy, 7, 0, Math.PI * 2);
+    vctx.fillStyle = p.col + 'dd'; vctx.fill();
+    vctx.strokeStyle = 'rgba(255,255,255,.3)'; vctx.lineWidth = 1;
+    vctx.stroke();
+  });
+
+  // angle label
+  document.getElementById('vangle').textContent = Math.round(vAngle) + '°';
+
+  // ── 1D STRIP ──
+  const PW = p1d.width, PH = p1d.height;
+  p1ctx.clearRect(0, 0, PW, PH);
+
+  // background
+  p1ctx.fillStyle = 'rgba(255,255,255,.03)'; p1ctx.fillRect(0, 0, PW, PH);
+
+  const lY = PH / 2;
+  // axis line
+  p1ctx.strokeStyle = axCol; p1ctx.lineWidth = 2;
+  p1ctx.beginPath(); p1ctx.moveTo(20, lY); p1ctx.lineTo(PW - 20, lY); p1ctx.stroke();
+
+  // scale projections to fill the strip nicely
+  const pMin = Math.min(...projs), pMax = Math.max(...projs);
+  const pRange = Math.max(pMax - pMin, 0.01);
+  const margin = 28;
+
+  PTS.forEach((p, i) => {
+    const px = margin + ((projs[i] - pMin) / pRange) * (PW - margin * 2);
+    p1ctx.beginPath(); p1ctx.arc(px, lY, 7, 0, Math.PI * 2);
+    p1ctx.fillStyle = p.col + 'dd'; p1ctx.fill();
+    p1ctx.strokeStyle = 'rgba(255,255,255,.3)'; p1ctx.lineWidth = 1;
+    p1ctx.stroke();
   });
 }
 drawVariance();
@@ -661,15 +686,6 @@ const dpCtx=dpCv.getContext('2d');
 function setDP(u1v,u2v,v1v,v2v){
   document.getElementById('u1').value=u1v;document.getElementById('u2').value=u2v;
   document.getElementById('v1').value=v1v;document.getElementById('v2').value=v2v;
-  document.querySelectorAll('[id^="dp-btn-"]').forEach(b=>b.classList.remove('hi'));
-  const map={
-    '3,2,3,2':'dp-btn-0',
-    '3,0,0,3':'dp-btn-1',
-    '3,2,-3,-2':'dp-btn-2',
-    '0.46,-0.43,3,2':'dp-btn-3'
-  };
-  const key=`${u1v},${u2v},${v1v},${v2v}`;
-  if(map[key]) document.getElementById(map[key]).classList.add('hi');
   drawDP();
 }
 
